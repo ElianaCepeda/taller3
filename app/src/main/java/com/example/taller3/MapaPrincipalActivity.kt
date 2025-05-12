@@ -2,6 +2,8 @@ package com.example.taller3
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -10,14 +12,18 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.example.taller3.databinding.ActivityMapaPrincipalBinding
+import com.google.firebase.auth.FirebaseAuth
 
 class MapaPrincipalActivity : BaseActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapaPrincipalBinding
+    private var userUid: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        auth = FirebaseAuth.getInstance()
 
         binding = ActivityMapaPrincipalBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -28,6 +34,16 @@ class MapaPrincipalActivity : BaseActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        userUid = getCurrentUserId()
+        if (userUid == null) {
+            // Manejar el caso donde el UID no se pasó correctamente (esto no debería ocurrir si la lógica es correcta)
+            Toast.makeText(this, "Error: UID de usuario no encontrado.", Toast.LENGTH_LONG).show()
+            // Opcionalmente, forzar logout o redirigir a login
+            checkAuthentication() // Llama a la verificación de la clase base
+            return // Salir de onCreate si el UID es nulo
+        }
+        Log.d("PantallaPrincipal", "Usuario UID: $userUid")
     }
 
     /**
