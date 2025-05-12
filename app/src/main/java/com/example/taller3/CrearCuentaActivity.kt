@@ -132,11 +132,9 @@ class CrearCuentaActivity : AppCompatActivity() {
     }
 
     private fun isEmailValid(email: String): Boolean {
-        if (!email.contains("@") ||
-            !email.contains(".") ||
-            email.length < 5)
-            return false
-        return true
+        return !(!email.contains("@") ||
+                !email.contains(".") ||
+                email.length < 5)
     }
 
     fun irMapaPrincipal() {
