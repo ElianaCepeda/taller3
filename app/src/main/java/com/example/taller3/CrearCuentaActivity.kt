@@ -10,7 +10,6 @@ import com.example.taller3.databinding.ActivityCrearCuentaBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
-import kotlin.toString
 
 class CrearCuentaActivity : AppCompatActivity() {
     lateinit var binding: ActivityCrearCuentaBinding
