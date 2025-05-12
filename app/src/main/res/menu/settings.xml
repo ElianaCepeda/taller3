@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/menuLogOut"
+        android:icon="@drawable/logout"
+        android:title="LogOut"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/menuMapaPrincipal"
+        android:title="Mapa Principal" />
+    <item
+        android:id="@+id/menuDisponible_NoDisponible"
+        android:icon="@drawable/disponible"
+        android:title="Disponible" />
+    <item
+        android:id="@+id/menuUsuarios"
+        android:title="Usuarios Disponibles" />
+</menu>

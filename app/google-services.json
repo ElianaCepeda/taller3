@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "512573017389",
+    "project_id": "talleres-457318",
+    "storage_bucket": "talleres-457318.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:512573017389:android:ff6e498631491c332f97a4",
+        "android_client_info": {
+          "package_name": "com.example.taller2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoY84prbEsE3czMnYbjXuDLoAfeuR6GFw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:512573017389:android:e950fa9f2d1d9da22f97a4",
+        "android_client_info": {
+          "package_name": "com.example.taller3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoY84prbEsE3czMnYbjXuDLoAfeuR6GFw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

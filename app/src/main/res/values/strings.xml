@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">taller3</string>
+    <string name="title_activity_mapa">MapaActivity</string>
+    <string name="title_activity_mapa_amigo">MapaAmigoActivity</string>
+</resources>
