@@ -10,25 +10,24 @@
 
     <ImageView
         android:id="@+id/ImagenUsuario"
-        android:layout_width="92dp"
-        android:layout_height="92dp"
-        android:src="@mipmap/ic_launcher_round" />
+        android:layout_width="72dp"  android:layout_height="72dp" android:src="@mipmap/ic_launcher_round" /> <LinearLayout
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:orientation="vertical"
+    android:layout_marginStart="12dp">
 
     <TextView
         android:id="@+id/textNombre"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_marginStart="8dp"
         android:textSize="18sp"
-        android:text="Nombre Apellido" />
+        android:textStyle="bold"
+        android:text="Nombre Apellido" /> </LinearLayout>
 
     <ImageButton
         android:id="@+id/buttonLocation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="0.1"
-        app:srcCompat="@drawable/location" />
-
-
-</LinearLayout>
+        android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Ver ubicación"
+        app:srcCompat="@drawable/location" /> </LinearLayout>
