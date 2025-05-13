@@ -7,6 +7,8 @@ public class Usuario {
     private String numeroIdentificacion;
     private String disponibilidad;
     private String imageUrl;
+    private double latitud;
+    private double longitud;
 
 
     public Usuario() {
@@ -52,5 +54,21 @@ public class Usuario {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public double getLatitud() {
+        return latitud;
+    }
+
+    public void setLatitud(double latitud) {
+        this.latitud = latitud;
+    }
+
+    public double getLongitud() {
+        return longitud;
+    }
+
+    public void setLongitud(double longitud) {
+        this.longitud = longitud;
     }
 }
