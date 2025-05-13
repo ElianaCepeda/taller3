@@ -156,35 +156,7 @@ class CrearCuentaActivity : AppCompatActivity() {
         }
     }
 
-    private fun navigateToMain(user: FirebaseUser) {
-        val intent = Intent(this, MapaPrincipalActivity::class.java).apply {
-            // Añade flags para limpiar la pila de actividades anteriores (Login, Bienvenida)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("USER_UID", user.uid) // Pasa el UID como extra
-            // Puedes pasar más datos si los necesitas: user.email, user.displayName etc.
-        }
-        startActivity(intent)
-        finish() // Finaliza LoginActivity para que no quede en la pila
-    }
 
-    private fun signIn(email: String, password: String) {
-        Log.d(TAG, "signIn")
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this) { task ->
-                Log.d(TAG, "signInWithEmail:onComplete:" + task.isSuccessful)
-                if (task.isSuccessful) {
-                    Log.d(TAG, "signInWithEmail:success")
-                } else {
-                    Log.w(TAG, "signInWithEmail:failure", task.exception)
-                    Toast.makeText(
-                        this, "Fallo en la autenticación.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    binding.editTextNombre.setText("")
-                    binding.editTextPassword.setText("")
-                }
-            }
-    }
 
     private fun validar(): Boolean {
         var valid = true
@@ -298,7 +270,7 @@ class CrearCuentaActivity : AppCompatActivity() {
 
     // Lanzador para manejar el resultado de la cámara
     private val tomarFotoLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
+        if (result.resultCode == RESULT_OK) {
             // La imagen se guardó en 'currentPhotoUri', ya NO viene en 'result.data'
             if (::currentPhotoUri.isInitialized) {
                 // Carga la imagen desde la Uri en el ImageView

@@ -1,6 +1,5 @@
 package com.example.taller3.model;
 
-import java.util.ArrayList;
 
 public class Usuario {
     private String nombre;
