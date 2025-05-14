@@ -59,4 +59,5 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation (libs.play.services.location)
     implementation(libs.glide)
+    implementation(libs.gson)
 }
