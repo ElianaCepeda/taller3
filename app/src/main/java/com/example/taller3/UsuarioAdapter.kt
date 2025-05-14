@@ -2,6 +2,7 @@ package com.example.taller3
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -45,6 +46,10 @@ class UsuarioAdapter(
         }
 
         buttonLocation.setOnClickListener {
+            Log.d("AdapterClick", "Iniciando MapaAmigoActivity para: ${usuario.nombre}")
+            Log.d("AdapterClick", "UID Amigo: ${usuario.uidTransient}, Lat: ${usuario.latitud}, Lng: ${usuario.longitud}")
+
+
             Toast.makeText(context, "Ver ubicación de ${usuario.nombre}", Toast.LENGTH_SHORT).show()
             val intent = Intent(context, MapaAmigoActivity::class.java)
             // Usamos uidTransient, que habremos poblado con la clave del snapshot
@@ -52,6 +57,7 @@ class UsuarioAdapter(
             intent.putExtra("USER_LATITUD_SELECCIONADO", usuario.latitud)
             intent.putExtra("USER_LONGITUD_SELECCIONADO", usuario.longitud)
             intent.putExtra("USER_NOMBRE_SELECCIONADO", "${usuario.nombre} ${usuario.apellido}")
+            Log.d("AdapterClick", "Intent target: ${intent.component?.className}")
             context.startActivity(intent)
         }
         return view

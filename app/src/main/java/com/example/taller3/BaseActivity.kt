@@ -1,11 +1,13 @@
 package com.example.taller3
 
 import android.content.Intent
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 // Declarar BaseActivity como open para que otras clases puedan heredar de ella
 open class BaseActivity : AppCompatActivity() {
@@ -30,13 +32,44 @@ open class BaseActivity : AppCompatActivity() {
                 return true
             }
             R.id.menuDisponible_NoDisponible -> {
-                if(item.title == "Disponible"){
-                    item.title = "No Disponible"
-                    Toast.makeText(this, "Estado actualizado a no disponible", Toast.LENGTH_SHORT).show()
-                }else{
-                    item.title = "Disponible"
-                    Toast.makeText(this, "Estado actualizado a disponible", Toast.LENGTH_SHORT).show()
+                val newStatus: String
+                val currentMenuTitle = item.title.toString()
+
+                // Determina el nuevo estado y actualiza el título del menú
+                if (currentMenuTitle.equals("Disponible", ignoreCase = true)) {
+                    newStatus = "No Disponible"
+                    // Opcional: Cambiar el ícono si tienes uno para "No Disponible"
+                    // menuItem.setIcon(R.drawable.ic_no_disponible) // Ejemplo
+                } else {
+                    newStatus = "Disponible"
+                    // Opcional: Cambiar el ícono de vuelta a "Disponible"
+                    // menuItem.setIcon(R.drawable.disponible)
                 }
+                // Actualiza el título del menuItem ANTES de la operación de base de datos para feedback inmediato,
+                // pero prepárate para revertirlo si falla.
+                item.title = newStatus
+
+                val userId = getCurrentUserId()
+                if (userId != null) {
+                    val userAvailabilityRef = FirebaseDatabase.getInstance()
+                        .getReference(MIscelanius.PATH_USERS) // Usa tu constante para "usuarios"
+                        .child(userId)
+                        .child("disponibilidad") // Campo en Firebase
+
+                    userAvailabilityRef.setValue(newStatus)
+                        .addOnSuccessListener {
+                            Toast.makeText(
+                                this,
+                                "Estado actualizado a '$newStatus'",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            Log.d(
+                                "BaseActivity",
+                                "Disponibilidad del usuario $userId actualizada a: $newStatus"
+                            )
+                        }
+                }
+
                 return true
             }
             R.id.menuUsuarios -> {
