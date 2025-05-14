@@ -40,44 +40,8 @@ open class BaseActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.settings, menu)
-        // Cargar estado actual de disponibilidad del usuario logueado para el menú
-        loadCurrentUserAvailabilityForMenu(menu?.findItem(R.id.menuDisponible_NoDisponible))
         return true
     }
-
-    private fun loadCurrentUserAvailabilityForMenu(availabilityMenuItem: MenuItem?) {
-        if (availabilityMenuItem == null || auth.currentUser == null) return
-
-        val currentUserUid = getCurrentUserId() ?: return
-        val currentUserStatusRef = FirebaseDatabase.getInstance()
-            .getReference(MIscelanius.PATH_USERS)
-            .child(currentUserUid)
-            .child("disponibilidad")
-
-        currentUserStatusRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val currentStatus = snapshot.getValue(String::class.java)
-                if (currentStatus != null) {
-                    availabilityMenuItem.title = currentStatus
-                    // Opcional: Cambiar ícono según el estado
-                    if (currentStatus == "Disponible") {
-                        // availabilityMenuItem.setIcon(R.drawable.disponible)
-                    } else {
-                        // availabilityMenuItem.setIcon(R.drawable.no_disponible)
-                    }
-                } else {
-                    // Si no hay estado en DB, asumir "No Disponible" y ponerlo en DB
-                    availabilityMenuItem.title = "No Disponible"
-                    currentUserStatusRef.setValue("No Disponible")
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.w(TAG_BASE_ACTIVITY, "No se pudo cargar el estado de disponibilidad para el menú.", error.toException())
-            }
-        })
-    }
-
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
