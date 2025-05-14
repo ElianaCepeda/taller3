@@ -1,95 +1,120 @@
 package com.example.taller3
 
 import android.content.Intent
+import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.taller3.model.Usuario // Asegúrate que la importación de tu modelo Usuario sea correcta
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener // Necesario para cargar el nombre del usuario actual para el menú
 
-// Declarar BaseActivity como open para que otras clases puedan heredar de ella
 open class BaseActivity : AppCompatActivity() {
 
     protected lateinit var auth: FirebaseAuth
+    private lateinit var usersRef: DatabaseReference
+    private lateinit var globalUsersAvailabilityListener: ChildEventListener
+    private val otherUsersAvailabilityMap = mutableMapOf<String, String>() // Para detectar el CAMBIO a Disponible
+
+    private val TAG_BASE_ACTIVITY = "BaseActivity" // Tag para logs
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        auth = FirebaseAuth.getInstance() // Inicializa auth aquí
+
+        if (auth.currentUser != null) { // Solo configurar listeners si hay un usuario logueado
+            usersRef = FirebaseDatabase.getInstance().getReference(MIscelanius.PATH_USERS)
+            setupGlobalUsersAvailabilityListener()
+        } else {
+            // Si no hay usuario, checkAuthentication() en onResume se encargará de redirigir
+            Log.w(TAG_BASE_ACTIVITY, "Usuario no logueado en onCreate, no se configuran listeners globales.")
+        }
+    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.settings, menu)
+        // Cargar estado actual de disponibilidad del usuario logueado para el menú
+        loadCurrentUserAvailabilityForMenu(menu?.findItem(R.id.menuDisponible_NoDisponible))
         return true
     }
+
+    private fun loadCurrentUserAvailabilityForMenu(availabilityMenuItem: MenuItem?) {
+        if (availabilityMenuItem == null || auth.currentUser == null) return
+
+        val currentUserUid = getCurrentUserId() ?: return
+        val currentUserStatusRef = FirebaseDatabase.getInstance()
+            .getReference(MIscelanius.PATH_USERS)
+            .child(currentUserUid)
+            .child("disponibilidad")
+
+        currentUserStatusRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val currentStatus = snapshot.getValue(String::class.java)
+                if (currentStatus != null) {
+                    availabilityMenuItem.title = currentStatus
+                    // Opcional: Cambiar ícono según el estado
+                    if (currentStatus == "Disponible") {
+                        // availabilityMenuItem.setIcon(R.drawable.disponible)
+                    } else {
+                        // availabilityMenuItem.setIcon(R.drawable.no_disponible)
+                    }
+                } else {
+                    // Si no hay estado en DB, asumir "No Disponible" y ponerlo en DB
+                    availabilityMenuItem.title = "No Disponible"
+                    currentUserStatusRef.setValue("No Disponible")
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.w(TAG_BASE_ACTIVITY, "No se pudo cargar el estado de disponibilidad para el menú.", error.toException())
+            }
+        })
+    }
+
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menuLogOut -> {
-
-                singOut()
-
+                // Antes de cerrar sesión, marcar al usuario como "No Disponible"
+                val userId = getCurrentUserId()
+                if (userId != null) {
+                    FirebaseDatabase.getInstance()
+                        .getReference(MIscelanius.PATH_USERS)
+                        .child(userId)
+                        .child("disponibilidad")
+                        .setValue("No Disponible") // Marcar como no disponible al cerrar sesión
+                }
+                auth.signOut()
                 val intent = Intent(this, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
-                finish() // Cierra la actividad actual
+                finish()
                 return true
             }
             R.id.menuDisponible_NoDisponible -> {
-                val newStatus: String
-                val currentMenuTitle = item.title.toString()
-
-                // Determina el nuevo estado y actualiza el título del menú
-                if (currentMenuTitle.equals("Disponible", ignoreCase = true)) {
-                    newStatus = "No Disponible"
-                    // Opcional: Cambiar el ícono si tienes uno para "No Disponible"
-                    // menuItem.setIcon(R.drawable.ic_no_disponible) // Ejemplo
-                } else {
-                    newStatus = "Disponible"
-                    // Opcional: Cambiar el ícono de vuelta a "Disponible"
-                    // menuItem.setIcon(R.drawable.disponible)
-                }
-                // Actualiza el título del menuItem ANTES de la operación de base de datos para feedback inmediato,
-                // pero prepárate para revertirlo si falla.
-                item.title = newStatus
-
-                val userId = getCurrentUserId()
-                if (userId != null) {
-                    val userAvailabilityRef = FirebaseDatabase.getInstance()
-                        .getReference(MIscelanius.PATH_USERS) // Usa tu constante para "usuarios"
-                        .child(userId)
-                        .child("disponibilidad") // Campo en Firebase
-
-                    userAvailabilityRef.setValue(newStatus)
-                        .addOnSuccessListener {
-                            Toast.makeText(
-                                this,
-                                "Estado actualizado a '$newStatus'",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            Log.d(
-                                "BaseActivity",
-                                "Disponibilidad del usuario $userId actualizada a: $newStatus"
-                            )
-                        }
-                }
-
+                toggleUserAvailability(item)
                 return true
             }
+            // ... tus otros casos del menú ...
             R.id.menuUsuarios -> {
-                // Solo navega si no estamos ya en UsuariosDisponiblesActivity
                 if (this !is UsuariosDisponiblesActivity) {
                     val intent = Intent(this, UsuariosDisponiblesActivity::class.java)
                     startActivity(intent)
                 }
                 return true
             }
-
             R.id.menuMapaPrincipal -> {
-                if (this !is MapaPrincipalActivity) { // Solo navegar si no estamos ya en MapaPrincipalActivity
+                if (this !is MapaPrincipalActivity) {
                     val intent = Intent(this, MapaPrincipalActivity::class.java)
-                    // Estos flags ayudan a traer MapaPrincipalActivity al frente si ya existe en la pila,
-                    // y limpian las actividades que estén por encima.
                     intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     startActivity(intent)
-                    // Opcional: podrías querer cerrar la actividad actual si no es MapaPrincipalActivity
-                    // if (this !is MapaPrincipalActivity) finish()
                 } else {
                     Toast.makeText(this, "Ya estás en el Mapa Principal", Toast.LENGTH_SHORT).show()
                 }
@@ -99,36 +124,149 @@ open class BaseActivity : AppCompatActivity() {
         }
     }
 
+    protected fun toggleUserAvailability(menuItem: MenuItem) {
+        val newStatus: String
+        val currentMenuTitle = menuItem.title.toString()
+
+        if (currentMenuTitle.equals("Disponible", ignoreCase = true)) {
+            newStatus = "No Disponible"
+        } else {
+            newStatus = "Disponible"
+        }
+        menuItem.title = newStatus
+        // Opcional: Cambiar íconos aquí también
+
+        val userId = getCurrentUserId()
+        if (userId != null) {
+            val userAvailabilityRef = FirebaseDatabase.getInstance()
+                .getReference(MIscelanius.PATH_USERS)
+                .child(userId)
+                .child("disponibilidad")
+
+            userAvailabilityRef.setValue(newStatus)
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Tu estado es ahora '$newStatus'", Toast.LENGTH_SHORT).show()
+                    Log.d(TAG_BASE_ACTIVITY, "Disponibilidad propia actualizada a: $newStatus")
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Error al actualizar tu estado: ${e.message}", Toast.LENGTH_LONG).show()
+                    menuItem.title = currentMenuTitle // Revertir
+                }
+        } else {
+            Toast.makeText(this, "Error: Usuario no autenticado.", Toast.LENGTH_LONG).show()
+            menuItem.title = currentMenuTitle // Revertir
+        }
+    }
+
+    private fun setupGlobalUsersAvailabilityListener() {
+        globalUsersAvailabilityListener = object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                // Cuando un listener se añade, onChildAdded se llama para cada hijo existente.
+                // Almacenamos su estado actual para futuras comparaciones en onChildChanged.
+                val userId = snapshot.key
+                val user = snapshot.getValue(Usuario::class.java)
+                if (userId != null && user != null && userId != getCurrentUserId()) {
+                    otherUsersAvailabilityMap[userId] = user.disponibilidad ?: "No Disponible" // Asumir "No Disponible" si es nulo
+                }
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                val changedUserId = snapshot.key
+                val currentUserUid = getCurrentUserId()
+
+                // No mostrar Toast para los cambios propios
+                if (changedUserId == null || changedUserId == currentUserUid) {
+                    // Actualizar el mapa para el usuario actual si es un cambio propio,
+                    // por si el valor era nulo antes y ahora se establece.
+                    if (changedUserId != null) {
+                        val user = snapshot.getValue(Usuario::class.java)
+                        otherUsersAvailabilityMap[changedUserId] = user?.disponibilidad ?: "No Disponible"
+                    }
+                    return
+                }
+
+                val changedUser = snapshot.getValue(Usuario::class.java)
+                if (changedUser != null) {
+                    val newAvailability = changedUser.disponibilidad
+                    val oldAvailability = otherUsersAvailabilityMap[changedUserId]
+
+                    Log.d(TAG_BASE_ACTIVITY, "Cambio detectado para $changedUserId: $oldAvailability -> $newAvailability")
+
+                    // Notificar solo si el estado CAMBIÓ a "Disponible" desde otro estado
+                    if (newAvailability == "Disponible" && oldAvailability != "Disponible") {
+                        val userName = "${changedUser.nombre ?: ""} ${changedUser.apellido ?: ""}".trim()
+                        val displayName = if (userName.isNotEmpty()) userName else "Alguien"
+
+                        // Asegurarse que el Toast se muestra en el hilo UI
+                        runOnUiThread {
+                            Toast.makeText(
+                                applicationContext, // Usar applicationContext para Toasts "globales"
+                                "$displayName ahora está disponible.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                    // Actualizar el estado conocido para este usuario
+                    otherUsersAvailabilityMap[changedUserId] = newAvailability ?: "No Disponible"
+                }
+            }
+
+            override fun onChildRemoved(snapshot: DataSnapshot) {
+                // Si un usuario es eliminado, lo quitamos del mapa de seguimiento
+                snapshot.key?.let { otherUsersAvailabilityMap.remove(it) }
+            }
+
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                // No es relevante para este caso de uso
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.w(TAG_BASE_ACTIVITY, "Listener global de disponibilidad cancelado.", error.toException())
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (auth.currentUser != null && ::usersRef.isInitialized && ::globalUsersAvailabilityListener.isInitialized) {
+            Log.d(TAG_BASE_ACTIVITY, "Añadiendo listener global de disponibilidad.")
+            usersRef.addChildEventListener(globalUsersAvailabilityListener)
+            // Cargar estados iniciales de otros usuarios para el mapa de seguimiento.
+            // onChildAdded del listener ya hace esto la primera vez.
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (::usersRef.isInitialized && ::globalUsersAvailabilityListener.isInitialized) {
+            Log.d(TAG_BASE_ACTIVITY, "Quitando listener global de disponibilidad.")
+            usersRef.removeEventListener(globalUsersAvailabilityListener)
+            otherUsersAvailabilityMap.clear() // Limpiar el mapa al detener
+        }
+    }
+
     override fun onResume() {
         super.onResume()
-        // Verifica si el usuario está logueado cada vez que la actividad pasa a primer plano
-        checkAuthentication()
+        checkAuthentication() // Muy importante para la seguridad
     }
 
     protected fun checkAuthentication() {
+        if (!::auth.isInitialized) {
+            auth = FirebaseAuth.getInstance()
+        }
         if (auth.currentUser == null) {
-            // Si el usuario no está logueado, redirigir a LoginActivity
             val intent = Intent(this, LoginActivity::class.java).apply {
-                // Flags para limpiar la pila y que Login sea la nueva tarea raíz
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
             startActivity(intent)
-            finish() // Cierra la actividad actual protegida
+            finish()
         }
-        // Si está logueado, no hace nada y la actividad continúa.
-    }
-
-    private fun singOut() {
-        auth.signOut() // Cierra la sesión en Firebase (auth viene de BaseNavbarActivity)
-        // Redirige a LoginActivity limpiando la pila
-        val intent = Intent(this, LoginActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        startActivity(intent)
-        finish() // Cierra ConfiguracionPrincipalActivity
     }
 
     protected fun getCurrentUserId(): String? {
+        if (!::auth.isInitialized) {
+            auth = FirebaseAuth.getInstance()
+        }
         return auth.currentUser?.uid
     }
 }
