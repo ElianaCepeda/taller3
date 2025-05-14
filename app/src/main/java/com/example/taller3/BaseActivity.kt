@@ -46,15 +46,7 @@ open class BaseActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menuLogOut -> {
-                // Antes de cerrar sesión, marcar al usuario como "No Disponible"
-                val userId = getCurrentUserId()
-                if (userId != null) {
-                    FirebaseDatabase.getInstance()
-                        .getReference(MIscelanius.PATH_USERS)
-                        .child(userId)
-                        .child("disponibilidad")
-                        .setValue("No Disponible") // Marcar como no disponible al cerrar sesión
-                }
+
                 auth.signOut()
                 val intent = Intent(this, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

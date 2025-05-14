@@ -86,7 +86,6 @@ class UsuariosDisponiblesActivity : BaseActivity() {
 
             override fun onCancelled(error: DatabaseError) {
                 Log.w(TAG, "Failed to read value.", error.toException())
-                Toast.makeText(this@UsuariosDisponiblesActivity, "Error al cargar usuarios: ${error.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
